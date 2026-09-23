@@ -3,6 +3,7 @@ kind: Deployment
 metadata:
   name: backend
   namespace: cloudvault
+
 spec:
   replicas: 2
 
@@ -35,6 +36,11 @@ spec:
             - configMapRef:
                 name: backend-config
 
+          volumeMounts:
+            - name: aws-credentials
+              mountPath: /root/.aws
+              readOnly: true
+
           resources:
             requests:
               cpu: "100m"
@@ -57,15 +63,22 @@ spec:
             initialDelaySeconds: 10
             periodSeconds: 5
 
+      volumes:
+        - name: aws-credentials
+          secret:
+            secretName: aws-credentials
+
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: backend
   namespace: cloudvault
+
 spec:
   selector:
     app: backend
+
   ports:
     - port: 8000
       targetPort: 8000
