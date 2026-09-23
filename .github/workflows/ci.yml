@@ -1,4 +1,4 @@
-name: CloudVault CI
+name: CloudVault CI/CD
 
 on:
   push:
@@ -7,6 +7,10 @@ on:
   pull_request:
     branches:
       - main
+
+permissions:
+  contents: read
+  packages: write
 
 jobs:
   test-backend:
@@ -53,16 +57,32 @@ jobs:
         working-directory: backend
         run: pytest -q
 
-  build-images:
+  build-and-push:
     runs-on: ubuntu-latest
     needs: test-backend
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build backend image
-        run: docker build -t cloudvault-backend ./backend
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build frontend image
-        run: docker build -t cloudvault-frontend ./frontend
+      - name: Build and push backend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./backend
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/cloudvault-backend:latest
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: ./frontend
+          push: true
+          tags: ghcr.io/${{ github.repository_owner }}/cloudvault-frontend:latest
