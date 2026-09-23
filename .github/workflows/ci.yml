@@ -12,6 +12,28 @@ jobs:
   test-backend:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: pgvector/pgvector:pg17
+        env:
+          POSTGRES_DB: cloudvault
+          POSTGRES_USER: cloudvault
+          POSTGRES_PASSWORD: cloudvault
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U cloudvault -d cloudvault"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgresql+psycopg://cloudvault:cloudvault@localhost:5432/cloudvault
+      AWS_REGION: ap-south-1
+      S3_BUCKET_NAME: cloudvault-ci-test
+      JWT_SECRET_KEY: ci-test-secret
+      HF_TOKEN: ci-test-token
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
