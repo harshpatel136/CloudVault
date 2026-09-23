@@ -1,0 +1,41 @@
+services:
+
+  postgres:
+    image: pgvector/pgvector:pg17
+    container_name: cloudvault-postgres
+    environment:
+      POSTGRES_DB: cloudvault
+      POSTGRES_USER: cloudvault
+      POSTGRES_PASSWORD: cloudvault_dev_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - cloudvault-db-data:/var/lib/postgresql/data
+
+  backend:
+    build:
+      context: ./backend
+    container_name: cloudvault-backend
+    env_file:
+      - ./backend/.env
+    volumes:
+      - ~/.aws:/root/.aws:ro
+    ports:
+      - "8001:8000"
+    depends_on:
+      - postgres
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: cloudvault-frontend
+    environment:
+      API_URL: http://backend:8000
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend
+
+volumes:
+  cloudvault-db-data:
+    external: true
